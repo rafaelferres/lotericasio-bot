@@ -1,0 +1,17 @@
+{
+  "name": "lotericasio-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/rafaelferres/lotericasio-bot.git",
+  "author": "rafaelferres <raferres@outlook.com.br>",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon src/index.ts",
+    "build": "sucrase ./src -d ./dist --transforms typescript,imports",
+    "prod" : "sucrase ./src -d ./dist --transforms typescript,imports && node dist/index.js"
+  },
+  "devDependencies": {
+    "sucrase": "^3.15.0",
+    "typescript": "^3.9.5"
+  }
+}
