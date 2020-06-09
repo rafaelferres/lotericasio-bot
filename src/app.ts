@@ -11,7 +11,8 @@ class App {
 
     private setup = async () => {
         this.browser = await puppeteer.launch();
+
     }
 }
 
-export { App };
+export { App }
