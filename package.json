@@ -8,10 +8,15 @@
   "scripts": {
     "start": "nodemon src/index.ts",
     "build": "sucrase ./src -d ./dist --transforms typescript,imports",
-    "prod" : "sucrase ./src -d ./dist --transforms typescript,imports && node dist/index.js"
+    "prod": "sucrase ./src -d ./dist --transforms typescript,imports && node dist/index.js"
   },
   "devDependencies": {
+    "@types/puppeteer": "^3.0.0",
     "sucrase": "^3.15.0",
     "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "@types/node": "^14.0.12",
+    "puppeteer": "^2.1.1"
   }
 }
