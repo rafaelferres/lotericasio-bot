@@ -25,7 +25,7 @@ class App {
             headless: true
         });
 
-        this.cron = new CronJob("*/1 * * * *", () => {
+        this.cron = new CronJob("*/10 * * * *", () => {
             this.run();
         });
 
