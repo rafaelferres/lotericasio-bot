@@ -45,43 +45,54 @@ class App {
         await this.sleep(5000);
 
         var modalityMap = this.modalities.map(async (modality: ModalityInterface) => {
-            this.pages[modality.name.toString()] = await this.browser.newPage();
-            await this.pages[modality.name.toString()].setRequestInterception(true);
-            this.pages[modality.name.toString()].on('request', async (interceptedRequest: puppeteer.Request) => {
-                if(interceptedRequest.url().includes("!ut/p/a1")){
-                    this.modalitiesApi[modality.name.toString()] = interceptedRequest.url();
-                }
-
-                interceptedRequest.continue();
-            });
-
-            await this.pages[modality.name.toString()].goto(modality.url.toString());
-            await this.pages[modality.name.toString()].close();
-            delete this.pages[modality.name.toString()];
-
-            if(this.modalitiesApi[modality.name.toString()]){
+            try{
                 this.pages[modality.name.toString()] = await this.browser.newPage();
-                await this.pages[modality.name.toString()].goto(`${this.modalitiesApi[modality.name.toString()]}`);
-                let bodyHTML = await this.pages[modality.name.toString()].evaluate(() => document.body.innerHTML);
-                let bodyJson = JSON.parse(bodyHTML);
+                await this.pages[modality.name.toString()].setRequestInterception(true);
+                this.pages[modality.name.toString()].on('request', async (interceptedRequest: puppeteer.Request) => {
+                    if(interceptedRequest.url().includes("!ut/p/a1")){
+                        this.modalitiesApi[modality.name.toString()] = interceptedRequest.url();
+                    }
+
+                    interceptedRequest.continue();
+                });
+
+                await this.pages[modality.name.toString()].goto(modality.url.toString());
                 await this.pages[modality.name.toString()].close();
                 delete this.pages[modality.name.toString()];
 
-                if(bodyJson.nu_concurso && !bodyJson.concurso){
-                    bodyJson.concurso = bodyJson.nu_concurso;
-                    delete bodyJson.nu_concurso;
-                }else if(bodyJson.nu_CONCURSO && !bodyJson.concurso){
-                    bodyJson.concurso = bodyJson.nu_CONCURSO;
-                    delete bodyJson.nu_CONCURSO;
-                }
+                if(this.modalitiesApi[modality.name.toString()]){
+                    this.pages[modality.name.toString()] = await this.browser.newPage();
+                    await this.pages[modality.name.toString()].goto(`${this.modalitiesApi[modality.name.toString()]}`);
+                    let bodyHTML = await this.pages[modality.name.toString()].evaluate(() => document.body.innerHTML);
+                    let bodyJson = JSON.parse(bodyHTML);
+                    await this.pages[modality.name.toString()].close();
+                    delete this.pages[modality.name.toString()];
 
-                let exists = await Results.findOne({name: modality.name.toString(), concurso: bodyJson.concurso});
-                
-                if(!exists){
-                    bodyJson.name = modality.name.toString();
-                    await Results.create(bodyJson);
-                    console.log("New insert");
+                    if(bodyJson.nu_concurso && !bodyJson.concurso){
+                        bodyJson.concurso = bodyJson.nu_concurso;
+                        delete bodyJson.nu_concurso;
+                    }else if(bodyJson.nu_CONCURSO && !bodyJson.concurso){
+                        bodyJson.concurso = bodyJson.nu_CONCURSO;
+                        delete bodyJson.nu_CONCURSO;
+                    }
+
+                    bodyJson.concurso = bodyJson.concurso.toString();
+
+                    let exists = await Results.findOne({name: modality.name.toString(), concurso: bodyJson.concurso});
+                    
+                    if(!exists){
+                        bodyJson.name = modality.name.toString();
+                        await Results.create(bodyJson);
+                        console.log("New insert");
+                    }
                 }
+            }catch(err){
+                console.log(err);
+
+                if(await this.pages[modality.name.toString()])
+                    await this.pages[modality.name.toString()].close();
+
+                delete this.pages[modality.name.toString()];
             }
         });
 
@@ -135,6 +146,8 @@ class App {
                 bodyJson.concurso = bodyJson.nu_CONCURSO;
                 delete bodyJson.nu_CONCURSO;
             }
+
+            bodyJson.concurso = bodyJson.concurso.toString();
 
             let exists = await Results.findOne({name: name, concurso: bodyJson.concurso});
             
