@@ -8,7 +8,8 @@
   "scripts": {
     "start": "nodemon src/index.ts",
     "build": "sucrase ./src -d ./dist --transforms typescript,imports",
-    "prod": "sucrase ./src -d ./dist --transforms typescript,imports && node dist/index.js"
+    "prod": "node dist/index.js",
+    "postinstall": "sucrase ./src -d ./dist --transforms typescript,imports"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^3.2.0",
