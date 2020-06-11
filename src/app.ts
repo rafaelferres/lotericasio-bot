@@ -22,7 +22,8 @@ class App {
         this.modalities = await Modality.find();
 
         this.browser = await puppeteer.launch({
-            headless: true
+            headless: true,
+            args: ['--no-sandbox']
         });
 
         this.cron = new CronJob("*/10 * * * *", () => {
@@ -40,6 +41,7 @@ class App {
     }
 
     public async run(){
+        console.log("Running ...");
         await this.sleep(5000);
 
         var modalityMap = this.modalities.map(async (modality: ModalityInterface) => {
