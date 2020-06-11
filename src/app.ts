@@ -26,7 +26,7 @@ class App {
             args: ['--no-sandbox']
         });
 
-        this.cron = new CronJob("*/10 * * * *", () => {
+        this.cron = new CronJob("*/5 * * * *", () => {
             this.run();
         });
 
@@ -40,9 +40,27 @@ class App {
         });
     }
 
+    public async concursoToString(){
+        await this.sleep(5000);
+        console.log("start");
+        var res = await Results.find({concurso: {$exists:true}});
+
+        var modalityMap = res.map(async (result: any) => {
+            try{
+                if(result.concurso){
+                    await Results.updateOne({ _id : result._id}, { $set : { concurso : result.concurso.toString() }});
+                }
+            }catch(err){
+                console.log(err);
+            }
+        });
+
+        await Promise.all(modalityMap);
+        console.log("finish");
+    }
+
     public async run(){
         console.log("Running ...");
-        await this.sleep(5000);
 
         var modalityMap = this.modalities.map(async (modality: ModalityInterface) => {
             try{
@@ -93,6 +111,7 @@ class App {
                     await this.pages[modality.name.toString()].close();
 
                 delete this.pages[modality.name.toString()];
+                delete this.modalitiesApi[modality.name.toString()];
             }
         });
 

@@ -1,6 +1,8 @@
 import { Schema, model, Document } from 'mongoose';
 
-const ResultsSchema = new Schema({}, {
+const ResultsSchema = new Schema({
+    concurso: Schema.Types.Mixed,
+}, {
     timestamps: true,
     strict: false
 });
