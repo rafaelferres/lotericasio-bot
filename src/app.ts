@@ -74,13 +74,17 @@ class App {
                     interceptedRequest.continue();
                 });
 
-                await this.pages[modality.name.toString()].goto(modality.url.toString());
+                await this.pages[modality.name.toString()].goto(modality.url.toString(), {
+                    timeout: 0
+                });
                 await this.pages[modality.name.toString()].close();
                 delete this.pages[modality.name.toString()];
 
                 if(this.modalitiesApi[modality.name.toString()]){
                     this.pages[modality.name.toString()] = await this.browser.newPage();
-                    await this.pages[modality.name.toString()].goto(`${this.modalitiesApi[modality.name.toString()]}`);
+                    await this.pages[modality.name.toString()].goto(`${this.modalitiesApi[modality.name.toString()]}`, {
+                        timeout: 0
+                    });
                     let bodyHTML = await this.pages[modality.name.toString()].evaluate(() => document.body.innerHTML);
                     let bodyJson = JSON.parse(bodyHTML);
                     await this.pages[modality.name.toString()].close();
@@ -134,7 +138,9 @@ class App {
                 interceptedRequest.continue();
             });
 
-            await this.pages[modality.name.toString()].goto(modality.url.toString());
+            await this.pages[modality.name.toString()].goto(modality.url.toString(), {
+                timeout: 0
+            });
             await this.pages[modality.name.toString()].close();
             delete this.pages[modality.name.toString()];
 
@@ -150,7 +156,9 @@ class App {
             this.pages[name] = await this.browser.newPage();
             await this.pages[name].setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
 
-            await this.pages[name].goto(`${this.modalitiesApi[name]}&concurso=${concurso.toString()}`);
+            await this.pages[name].goto(`${this.modalitiesApi[name]}&concurso=${concurso.toString()}`,{
+                timeout: 0
+            });
             //await this.sleep(1000);
             let bodyHTML = await this.pages[name].evaluate(() => document.body.innerHTML);
 
