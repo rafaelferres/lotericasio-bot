@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Modality, { ModalityInterface } from './schemas/Modality';
 import Results from './schemas/Results';
 import { CronJob } from "cron";
+import fetch from "node-fetch";
 
 class App {
 
@@ -40,95 +41,11 @@ class App {
         });
     }
 
-    public async concursoToString(){
-        await this.sleep(5000);
-        console.log("start");
-        var res = await Results.find({concurso: {$exists:true}});
-
-        var modalityMap = res.map(async (result: any) => {
-            try{
-                if(result.concurso){
-                    await Results.updateOne({ _id : result._id}, { $set : { concurso : result.concurso.toString() }});
-                }
-            }catch(err){
-                console.log(err);
-            }
-        });
-
-        await Promise.all(modalityMap);
-        console.log("finish");
-    }
-
     public async run(){
         console.log("Running ...");
 
         var modalityMap = this.modalities.map(async (modality: ModalityInterface) => {
-            try{
-                this.pages[modality.name.toString()] = await this.browser.newPage();
-                await this.pages[modality.name.toString()].setRequestInterception(true);
-                this.pages[modality.name.toString()].on('request', async (interceptedRequest: puppeteer.Request) => {
-                    if(interceptedRequest.url().includes("!ut/p/a1")){
-                        this.modalitiesApi[modality.name.toString()] = interceptedRequest.url();
-                    }
-
-                    interceptedRequest.continue();
-                });
-
-                await this.pages[modality.name.toString()].goto(modality.url.toString(), {
-                    timeout: 0
-                });
-                await this.pages[modality.name.toString()].close();
-                delete this.pages[modality.name.toString()];
-
-                if(this.modalitiesApi[modality.name.toString()]){
-                    this.pages[modality.name.toString()] = await this.browser.newPage();
-                    await this.pages[modality.name.toString()].goto(`${this.modalitiesApi[modality.name.toString()]}`, {
-                        timeout: 0
-                    });
-                    let bodyHTML = await this.pages[modality.name.toString()].evaluate(() => document.body.innerHTML);
-                    let bodyJson = JSON.parse(bodyHTML);
-                    await this.pages[modality.name.toString()].close();
-                    delete this.pages[modality.name.toString()];
-
-                    if(bodyJson.nu_concurso && !bodyJson.concurso){
-                        bodyJson.concurso = bodyJson.nu_concurso;
-                        delete bodyJson.nu_concurso;
-                    }else if(bodyJson.nu_CONCURSO && !bodyJson.concurso){
-                        bodyJson.concurso = bodyJson.nu_CONCURSO;
-                        delete bodyJson.nu_CONCURSO;
-                    }
-
-                    bodyJson.concurso = bodyJson.concurso.toString();
-
-                    let exists = await Results.findOne({name: modality.name.toString(), concurso: bodyJson.concurso});
-                    
-                    if(!exists){
-                        bodyJson.name = modality.name.toString();
-                        await Results.create(bodyJson);
-                        console.log("New insert");
-                    }
-                }
-            }catch(err){
-                console.log(err);
-
-                if(await this.pages[modality.name.toString()])
-                    await this.pages[modality.name.toString()].close();
-
-                delete this.pages[modality.name.toString()];
-                delete this.modalitiesApi[modality.name.toString()];
-            }
-        });
-
-        await Promise.all(modalityMap);
-        console.log("Finish");
-    }
-
-    public async loadDataDatabase(){
-        await this.sleep(10000);
-
-        var modalityMap = this.modalities.map(async (modality: ModalityInterface) => {
             this.pages[modality.name.toString()] = await this.browser.newPage();
-            await this.pages[modality.name.toString()].setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
             await this.pages[modality.name.toString()].setRequestInterception(true);
             this.pages[modality.name.toString()].on('request', async (interceptedRequest: puppeteer.Request) => {
                 if(interceptedRequest.url().includes("!ut/p/a1")){
@@ -145,66 +62,62 @@ class App {
             delete this.pages[modality.name.toString()];
 
             if(this.modalitiesApi[modality.name.toString()]){
-                await this.recursiveLoadDatabase(modality.name.toString(), "1");
+                await this.fetchResult(modality.name.toString(), this.modalitiesApi[modality.name.toString()]);
             }
         });
+
         await Promise.all(modalityMap);
+
+        console.log("Finish");
     }
 
-    private async recursiveLoadDatabase(name:string, concurso: string){
-        try{
-            this.pages[name] = await this.browser.newPage();
-            await this.pages[name].setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+    async fetchResult(modality: string, url: string): Promise<any>{
+        return new Promise(async (resolve, reject) => {
+            var headers: any = {
+                "Host": "loterias.caixa.gov.br",
+                "Connection": "keep-alive",
+                "Accept": ["application/json", "text/plain"],
+                "Request-Id": "|gQ3bt.OiZid",
+                "User-Agent": ["Mozilla/5.0 (Macintosh", "Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML", "like Gecko) Chrome/79.0.3945.130 Safari/537.36"],
+                "Request-Context": ["appId=cid-v1:51424569-30f5-41dc-acc7-6ddd0767375a"],
+                "Referer": [url],
+                "Accept-Encoding": ["gzip", "deflate"],
+                "Accept-Language": ["pt-BR,pt", "q=0.9", "en-US", "q=0.8", "en", "q=0.7"],
+                "Cookie": ["security=true", "ai_user=olcix|2020-02-10T17:43:07.421Z", "ai_session=/VySj|1581356587424.43|1581356587424.43", "_pk_ref.4.968f=%5B%22%22%2C%22%22%2C1581356588%2C%22https%3A%2F%2Fwww.google.com%2F%22%5D", "_pk_id.4.968f=b454e510ffe028c5.1581356588.1.1581356588.1581356588.", "_pk_ses.4.968f=*", "_ga=GA1.4.1094927038.1581356588", "_gid=GA1.4.213073038.1581356588"]
+            };
 
-            await this.pages[name].goto(`${this.modalitiesApi[name]}&concurso=${concurso.toString()}`,{
-                timeout: 0
-            });
-            //await this.sleep(1000);
-            let bodyHTML = await this.pages[name].evaluate(() => document.body.innerHTML);
+            fetch(url, { method: 'GET', headers: headers })
+                    .then((res) => {
+                        return res.json()
+                    })
+                    .then(async (json) => {
+                        if(json.nu_concurso && !json.concurso){
+                            json.concurso = json.nu_concurso;
+                            delete json.nu_concurso;
+                        }else if(json.nu_CONCURSO && !json.concurso){
+                            json.concurso = json.nu_CONCURSO;
+                            delete json.nu_CONCURSO;
+                        }
+    
+                        json.concurso = json.concurso.toString();
 
-            let bodyJson = JSON.parse(bodyHTML);
-            await this.pages[name].close();
-            delete this.pages[name];
+                        let exists = await Results.findOne({name: modality, concurso: json.concurso});
+                    
+                        if(!exists){
+                            json.name = modality;
+                            await Results.create(json);
+                            console.log("New insert");
+                        }
 
-            if(bodyJson.nu_concurso && !bodyJson.concurso){
-                bodyJson.concurso = bodyJson.nu_concurso;
-                delete bodyJson.nu_concurso;
-            }else if(bodyJson.nu_CONCURSO && !bodyJson.concurso){
-                bodyJson.concurso = bodyJson.nu_CONCURSO;
-                delete bodyJson.nu_CONCURSO;
-            }
-
-            bodyJson.concurso = bodyJson.concurso.toString();
-
-            let exists = await Results.findOne({name: name, concurso: bodyJson.concurso});
-            
-            if(!exists){
-                bodyJson.name = name;
-                await Results.create(bodyJson);
-                console.log("New insert");
-            }
-            
-            if(bodyJson.proximoConcurso.toString() != bodyJson.concurso.toString()){
-                //await this.sleep(1000);
-                this.recursiveLoadDatabase(name, bodyJson.proximoConcurso);
-            }
-        }catch(err){
-            console.log(err);
-            await this.sleep(1000);
-            if(await this.pages[name])
-                await this.pages[name].close();
-
-            delete this.pages[name];
-            
-            this.recursiveLoadDatabase(name, concurso);
-        }
-    }
-
-    private sleep(ms: number) {
-        return new Promise((resolve) => {
-          setTimeout(resolve, ms);
+                        resolve();
+                    })
+                    .catch(function (error) {
+                        console.log('Não foi possível realizar o método GET: ' + error.message);
+                        reject(error);
+                    });
         });
-      }  
+    }
+
 }
 
 export { App }
