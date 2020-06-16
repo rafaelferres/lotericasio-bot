@@ -105,6 +105,7 @@ class App {
                     
                         if(!exists){
                             json.name = modality;
+                            console.log(json);
                             await Results.create(json);
                             console.log("New insert");
                         }
