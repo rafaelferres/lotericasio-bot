@@ -32,8 +32,6 @@ class App {
         this.server.listen(process.env.PORT || 8080, () => {
             this.setup();
          });
-
-        
     }
 
     private async setup(){
@@ -124,7 +122,7 @@ class App {
                     
                         if(!exists){
                             json.name = modality;
-                            console.log(json);
+                            this.io.emit("message", json);
                             await Results.create(json);
                             console.log("New insert");
                         }
