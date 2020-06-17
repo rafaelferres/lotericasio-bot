@@ -4,6 +4,9 @@ import Modality, { ModalityInterface } from './schemas/Modality';
 import Results from './schemas/Results';
 import { CronJob } from "cron";
 import fetch from "node-fetch";
+import socketIo from "socket.io";
+import express from "express";
+import { Server, createServer } from "http";
 
 class App {
 
@@ -12,9 +15,25 @@ class App {
     private modalities: Array<ModalityInterface>;
     private modalitiesApi: { [key:string] : string } = {};
     private cron: CronJob;
+    private io: SocketIO.Server;
+    private _app: express.Application;
+    private server: Server;
+    private static readonly PORT: number = 8080;
 
     public constructor(){
-        this.setup();
+        this._app = express();
+        this.server = createServer(this._app);
+        this.io = socketIo(this.server);
+
+        this.io.on("connection", (socket: socketIo.Socket) => {
+            console.log("new connection");
+        });
+
+        this.server.listen(process.env.PORT || 8080, () => {
+            this.setup();
+         });
+
+        
     }
 
     private async setup(){
