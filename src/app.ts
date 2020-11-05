@@ -44,11 +44,11 @@ class App {
             args: ['--no-sandbox']
         });
 
-        //this.cron = new CronJob("*/5 * * * *", () => {
+        this.cron = new CronJob("*/5 * * * *", () => {
             this.run();
-        //});
+        });
 
-        //this.cron.start();
+        this.cron.start();
     }
 
     private async database () {
