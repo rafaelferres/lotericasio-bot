@@ -44,11 +44,11 @@ class App {
             args: ['--no-sandbox']
         });
 
-        this.cron = new CronJob("*/5 * * * *", () => {
+        //this.cron = new CronJob("*/5 * * * *", () => {
             this.run();
-        });
+        //});
 
-        this.cron.start();
+        //this.cron.start();
     }
 
     private async database () {
@@ -108,12 +108,16 @@ class App {
                         return res.json()
                     })
                     .then(async (json) => {
+                        //console.log(json);
                         if(json.nu_concurso && !json.concurso){
                             json.concurso = json.nu_concurso;
                             delete json.nu_concurso;
                         }else if(json.nu_CONCURSO && !json.concurso){
                             json.concurso = json.nu_CONCURSO;
                             delete json.nu_CONCURSO;
+                        }else if(json.numero && !json.concurso){
+                            json.concurso = json.numero;
+                            delete json.numero;
                         }
     
                         json.concurso = json.concurso.toString();
