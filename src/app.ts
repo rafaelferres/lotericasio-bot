@@ -52,7 +52,7 @@ class App {
     }
 
     private async database () {
-        await mongoose.connect('mongodb+srv://adm:b2fteqUrouYXdT9U@cluster0-6q8xt.gcp.mongodb.net/lotericas', {
+        await mongoose.connect('#', {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
